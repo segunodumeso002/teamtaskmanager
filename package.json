@@ -6,6 +6,9 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
+    "test": "node --test \"src/**/*.test.js\"",
+    "test:backend": "npm --prefix backend run test",
+    "test:all": "npm run test && npm run test:backend",
     "lint": "eslint .",
     "preview": "vite preview"
   },

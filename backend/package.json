@@ -6,7 +6,8 @@
   "main": "src/handler.js",
   "scripts": {
     "start": "node --env-file=.env src/local-server.js",
-    "check": "node --check src/handler.js"
+    "check": "node --check src/handler.js",
+    "test": "node --test \"tests/**/*.test.js\""
   },
   "dependencies": {
     "@aws-sdk/client-dynamodb": "^3.883.0",
