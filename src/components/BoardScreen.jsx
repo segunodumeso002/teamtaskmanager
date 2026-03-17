@@ -35,6 +35,7 @@ export default function BoardScreen() {
     logout,
     setActiveProject,
     createProject,
+    addUser,
     createTask,
     updateTask,
     deleteTask,
@@ -45,6 +46,7 @@ export default function BoardScreen() {
   const [filters, setFilters] = useState({ search: '', assigneeId: 'all', priority: 'all' })
   const [selectedTaskId, setSelectedTaskId] = useState(null)
   const [projectForm, setProjectForm] = useState({ name: '', description: '' })
+  const [userForm, setUserForm] = useState({ name: '', email: '', role: 'member' })
   const [taskForm, setTaskForm] = useState({
     title: '',
     description: '',
@@ -89,6 +91,7 @@ export default function BoardScreen() {
   const canUseProtectedActions = backendMode === 'local' || hasRemoteSession
   const canCreateProjects = isManagerLike && canUseProtectedActions
   const canCreateTaskItems = canCreateTasks && canUseProtectedActions
+  const canManageUsers = currentUser?.role === 'admin' && canUseProtectedActions
 
   async function handleCreateProject(event) {
     event.preventDefault()
@@ -134,6 +137,27 @@ export default function BoardScreen() {
         status: 'backlog',
         dueDate: '',
       })
+    } catch {
+      // Shared context error banner handles feedback.
+    }
+  }
+
+  async function handleAddUser(event) {
+    event.preventDefault()
+
+    const trimmedName = userForm.name.trim()
+    const trimmedEmail = userForm.email.trim().toLowerCase()
+
+    if (!canManageUsers || !trimmedName || !trimmedEmail) return
+
+    try {
+      await addUser({
+        name: trimmedName,
+        email: trimmedEmail,
+        role: userForm.role,
+      })
+
+      setUserForm({ name: '', email: '', role: 'member' })
     } catch {
       // Shared context error banner handles feedback.
     }
@@ -241,6 +265,50 @@ export default function BoardScreen() {
             )}
             {!canUseProtectedActions && (
               <p className="text-xs text-amber-300">Session is not active. Login again to continue.</p>
+            )}
+          </form>
+
+          <form onSubmit={handleAddUser} className="mt-5 space-y-2">
+            <h3 className="font-heading text-lg text-white">Admin: Add User</h3>
+            <input
+              value={userForm.name}
+              onChange={(event) =>
+                setUserForm((prev) => ({ ...prev, name: event.target.value }))
+              }
+              className="w-full rounded-lg border border-brand-700 bg-brand-950 px-3 py-2 text-sm text-white outline-none ring-brand-300 focus:ring"
+              placeholder="Full name"
+              disabled={!canManageUsers}
+            />
+            <input
+              value={userForm.email}
+              type="email"
+              onChange={(event) =>
+                setUserForm((prev) => ({ ...prev, email: event.target.value }))
+              }
+              className="w-full rounded-lg border border-brand-700 bg-brand-950 px-3 py-2 text-sm text-white outline-none ring-brand-300 focus:ring"
+              placeholder="Email"
+              disabled={!canManageUsers}
+            />
+            <select
+              value={userForm.role}
+              onChange={(event) =>
+                setUserForm((prev) => ({ ...prev, role: event.target.value }))
+              }
+              className="w-full rounded-lg border border-brand-700 bg-brand-950 px-3 py-2 text-sm"
+              disabled={!canManageUsers}
+            >
+              <option value="member">member</option>
+              <option value="manager">manager</option>
+            </select>
+            <button
+              type="submit"
+              disabled={!canManageUsers}
+              className="w-full rounded-lg bg-accent-500 px-3 py-2 text-sm font-semibold text-white transition hover:bg-accent-400 disabled:cursor-not-allowed disabled:bg-brand-700"
+            >
+              Add User
+            </button>
+            {!canManageUsers && (
+              <p className="text-xs text-amber-300">Only admin can add member or manager users.</p>
             )}
           </form>
         </aside>

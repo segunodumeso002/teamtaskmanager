@@ -1,0 +1,28 @@
+openapi: 3.0.3
+info:
+  title: Team Task Manager API
+  version: 0.1.0
+paths:
+  /bootstrap:
+    get:
+      summary: Bootstrap all state for frontend
+  /auth/login:
+    post:
+      summary: Login and return user session
+  /projects:
+    post:
+      summary: Create project
+  /tasks:
+    post:
+      summary: Create task
+  /tasks/{taskId}:
+    patch:
+      summary: Update task fields
+    delete:
+      summary: Delete task
+  /tasks/{taskId}/comments:
+    post:
+      summary: Add comment to task
+  /comments/{commentId}:
+    delete:
+      summary: Delete comment

@@ -1,0 +1,37 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "DynamoDbCrudForTaskManagerTables",
+      "Effect": "Allow",
+      "Action": [
+        "dynamodb:GetItem",
+        "dynamodb:PutItem",
+        "dynamodb:UpdateItem",
+        "dynamodb:DeleteItem",
+        "dynamodb:Scan",
+        "dynamodb:Query"
+      ],
+      "Resource": [
+        "arn:aws:dynamodb:us-east-1:*:table/ttm-users-dev",
+        "arn:aws:dynamodb:us-east-1:*:table/ttm-projects-dev",
+        "arn:aws:dynamodb:us-east-1:*:table/ttm-project-members-dev",
+        "arn:aws:dynamodb:us-east-1:*:table/ttm-tasks-dev",
+        "arn:aws:dynamodb:us-east-1:*:table/ttm-comments-dev",
+        "arn:aws:dynamodb:us-east-1:*:table/ttm-users-dev/index/*",
+        "arn:aws:dynamodb:us-east-1:*:table/ttm-tasks-dev/index/*",
+        "arn:aws:dynamodb:us-east-1:*:table/ttm-comments-dev/index/*"
+      ]
+    },
+    {
+      "Sid": "CloudWatchLogsBasic",
+      "Effect": "Allow",
+      "Action": [
+        "logs:CreateLogGroup",
+        "logs:CreateLogStream",
+        "logs:PutLogEvents"
+      ],
+      "Resource": "*"
+    }
+  ]
+}

@@ -48,6 +48,22 @@ function reducer(state, action) {
         activeProjectId: project.id,
       }
     }
+    case 'CREATE_USER': {
+      const user =
+        action.payload.id
+          ? action.payload
+          : {
+              id: createId('u'),
+              name: action.payload.name,
+              email: action.payload.email,
+              role: action.payload.role,
+            }
+
+      return {
+        ...state,
+        users: [...state.users, user],
+      }
+    }
     case 'CREATE_TASK': {
       const task =
         action.payload.id
@@ -284,6 +300,29 @@ export function TaskManagerProvider({ children }) {
         dispatch({ type: 'CREATE_PROJECT', payload: createdProject })
       } catch (error) {
         handleSyncError(error, 'Failed to create project.')
+        throw error
+      } finally {
+        setIsSyncing(false)
+      }
+    },
+    addUser: async (payload) => {
+      setLastError(null)
+
+      if (!taskManagerApi.isConfigured()) {
+        dispatch({ type: 'CREATE_USER', payload })
+        return
+      }
+
+      if (!ensureProtectedRemoteSession()) {
+        throw new Error('Session expired. Please login again.')
+      }
+
+      setIsSyncing(true)
+      try {
+        const createdUser = await taskManagerApi.createUser(payload)
+        dispatch({ type: 'CREATE_USER', payload: createdUser })
+      } catch (error) {
+        handleSyncError(error, 'Failed to add user.')
         throw error
       } finally {
         setIsSyncing(false)

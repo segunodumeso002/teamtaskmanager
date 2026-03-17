@@ -1,0 +1,6 @@
+{
+  "id": {"S": "u3"},
+  "name": {"S": "Noah Owusu"},
+  "email": {"S": "noah@taskflow.dev"},
+  "role": {"S": "member"}
+}

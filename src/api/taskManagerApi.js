@@ -43,6 +43,13 @@ export const taskManagerApi = {
     })
   },
 
+  async createUser(payload) {
+    return request('/users', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    })
+  },
+
   async createTask(payload) {
     return request('/tasks', {
       method: 'POST',
