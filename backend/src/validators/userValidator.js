@@ -15,3 +15,11 @@ export function validateCreateUser(payload) {
     throw new HttpError(400, "Field 'role' must be either 'member' or 'manager'.")
   }
 }
+
+export function validateUpdateUserRole(payload) {
+  assertRequired(payload?.role, 'role')
+
+  if (!['member', 'manager'].includes(payload.role)) {
+    throw new HttpError(400, "Field 'role' must be either 'member' or 'manager'.")
+  }
+}

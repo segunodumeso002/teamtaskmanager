@@ -129,6 +129,18 @@ export const inMemoryStore = {
     return created
   },
 
+  updateUserRole(userId, role) {
+    const index = users.findIndex((user) => user.id === userId)
+    if (index < 0) return null
+
+    users[index] = {
+      ...users[index],
+      role,
+    }
+
+    return users[index]
+  },
+
   createTask(payload) {
     const created = {
       id: createId('t'),

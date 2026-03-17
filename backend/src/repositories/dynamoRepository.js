@@ -226,6 +226,34 @@ export function createDynamoRepository(config) {
       return user
     },
 
+    updateUserRole: async (userId, role) => {
+      try {
+        const response = await client.send(
+          new UpdateCommand({
+            TableName: users,
+            Key: { id: userId },
+            UpdateExpression: 'SET #role = :role',
+            ExpressionAttributeNames: {
+              '#role': 'role',
+            },
+            ExpressionAttributeValues: {
+              ':role': role,
+            },
+            ConditionExpression: 'attribute_exists(id)',
+            ReturnValues: 'ALL_NEW',
+          }),
+        )
+
+        return response.Attributes ?? null
+      } catch (error) {
+        if (error?.name === 'ConditionalCheckFailedException') {
+          return null
+        }
+
+        throw error
+      }
+    },
+
     createTask: async (payload) => {
       const task = {
         id: createId('t'),

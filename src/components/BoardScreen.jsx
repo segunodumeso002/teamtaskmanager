@@ -36,6 +36,7 @@ export default function BoardScreen() {
     setActiveProject,
     createProject,
     addUser,
+    updateUserRole,
     createTask,
     updateTask,
     deleteTask,
@@ -47,6 +48,7 @@ export default function BoardScreen() {
   const [selectedTaskId, setSelectedTaskId] = useState(null)
   const [projectForm, setProjectForm] = useState({ name: '', description: '' })
   const [userForm, setUserForm] = useState({ name: '', email: '', role: 'member' })
+  const [userRoleDrafts, setUserRoleDrafts] = useState({})
   const [taskForm, setTaskForm] = useState({
     title: '',
     description: '',
@@ -66,6 +68,11 @@ export default function BoardScreen() {
       .map((member) => users.find((user) => user.id === member.userId))
       .filter(Boolean)
   }, [activeProject, users])
+
+  const manageableUsers = useMemo(
+    () => users.filter((user) => user.role !== 'admin'),
+    [users],
+  )
 
   const projectTasks = useMemo(() => {
     if (!activeProject) return []
@@ -170,6 +177,19 @@ export default function BoardScreen() {
     try {
       await deleteTask(task.id)
       if (selectedTaskId === task.id) setSelectedTaskId(null)
+    } catch {
+      // Shared context error banner handles feedback.
+    }
+  }
+
+  async function handleUpdateUserRole(userId, fallbackRole) {
+    if (!canManageUsers) return
+
+    const nextRole = userRoleDrafts[userId] ?? fallbackRole
+    if (!['member', 'manager'].includes(nextRole)) return
+
+    try {
+      await updateUserRole(userId, nextRole)
     } catch {
       // Shared context error banner handles feedback.
     }
@@ -311,6 +331,52 @@ export default function BoardScreen() {
               <p className="text-xs text-amber-300">Only admin can add member or manager users.</p>
             )}
           </form>
+
+          <div className="mt-5 space-y-2">
+            <h3 className="font-heading text-lg text-white">Admin: Manage Roles</h3>
+            <div className="max-h-56 space-y-2 overflow-auto pr-1">
+              {manageableUsers.map((user) => {
+                const selectedRole = userRoleDrafts[user.id] ?? user.role
+
+                return (
+                  <div
+                    key={user.id}
+                    className="rounded-lg border border-brand-700 bg-brand-950/70 p-2"
+                  >
+                    <p className="text-sm font-medium text-white">{user.name}</p>
+                    <p className="text-xs text-brand-300">{user.email}</p>
+                    <div className="mt-2 grid grid-cols-[1fr_auto] gap-2">
+                      <select
+                        value={selectedRole}
+                        onChange={(event) =>
+                          setUserRoleDrafts((prev) => ({
+                            ...prev,
+                            [user.id]: event.target.value,
+                          }))
+                        }
+                        className="rounded-lg border border-brand-700 bg-brand-950 px-2 py-1 text-sm"
+                        disabled={!canManageUsers}
+                      >
+                        <option value="member">member</option>
+                        <option value="manager">manager</option>
+                      </select>
+                      <button
+                        type="button"
+                        onClick={() => handleUpdateUserRole(user.id, user.role)}
+                        disabled={!canManageUsers || selectedRole === user.role}
+                        className="rounded-lg border border-brand-600 px-2 py-1 text-xs uppercase tracking-wider text-brand-100 hover:border-brand-400 disabled:cursor-not-allowed disabled:border-brand-700 disabled:text-brand-500"
+                      >
+                        Save
+                      </button>
+                    </div>
+                  </div>
+                )
+              })}
+              {manageableUsers.length === 0 && (
+                <p className="text-xs text-brand-300">No non-admin users to manage yet.</p>
+              )}
+            </div>
+          </div>
         </aside>
 
         <section className="rounded-2xl border border-brand-700 bg-brand-900/70 p-4 backdrop-blur-sm">

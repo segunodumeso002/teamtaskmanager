@@ -4,7 +4,7 @@ import { addCommentHandler, deleteCommentHandler } from './endpoints/comments.js
 import { healthHandler } from './endpoints/health.js'
 import { createProjectHandler } from './endpoints/projects.js'
 import { createTaskHandler, deleteTaskHandler, updateTaskHandler } from './endpoints/tasks.js'
-import { createUserHandler } from './endpoints/users.js'
+import { createUserHandler, updateUserRoleHandler } from './endpoints/users.js'
 import { HttpError } from './http/errors.js'
 
 function matchPath(pattern, path) {
@@ -42,6 +42,12 @@ const routes = [
     method: 'POST',
     pattern: '/users',
     handler: createUserHandler,
+    auth: { required: true, roles: ['admin'] },
+  },
+  {
+    method: 'PATCH',
+    pattern: '/users/:userId',
+    handler: updateUserRoleHandler,
     auth: { required: true, roles: ['admin'] },
   },
   {

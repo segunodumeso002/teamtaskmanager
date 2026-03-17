@@ -50,6 +50,13 @@ export const taskManagerApi = {
     })
   },
 
+  async updateUserRole(userId, role) {
+    return request(`/users/${userId}`, {
+      method: 'PATCH',
+      body: JSON.stringify({ role }),
+    })
+  },
+
   async createTask(payload) {
     return request('/tasks', {
       method: 'POST',

@@ -64,6 +64,16 @@ function reducer(state, action) {
         users: [...state.users, user],
       }
     }
+    case 'UPDATE_USER_ROLE': {
+      return {
+        ...state,
+        users: state.users.map((user) =>
+          user.id === action.payload.userId
+            ? { ...user, role: action.payload.role }
+            : user,
+        ),
+      }
+    }
     case 'CREATE_TASK': {
       const task =
         action.payload.id
@@ -323,6 +333,29 @@ export function TaskManagerProvider({ children }) {
         dispatch({ type: 'CREATE_USER', payload: createdUser })
       } catch (error) {
         handleSyncError(error, 'Failed to add user.')
+        throw error
+      } finally {
+        setIsSyncing(false)
+      }
+    },
+    updateUserRole: async (userId, role) => {
+      setLastError(null)
+
+      if (!taskManagerApi.isConfigured()) {
+        dispatch({ type: 'UPDATE_USER_ROLE', payload: { userId, role } })
+        return
+      }
+
+      if (!ensureProtectedRemoteSession()) {
+        throw new Error('Session expired. Please login again.')
+      }
+
+      setIsSyncing(true)
+      try {
+        await taskManagerApi.updateUserRole(userId, role)
+        dispatch({ type: 'UPDATE_USER_ROLE', payload: { userId, role } })
+      } catch (error) {
+        handleSyncError(error, 'Failed to update user role.')
         throw error
       } finally {
         setIsSyncing(false)

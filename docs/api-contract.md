@@ -59,6 +59,7 @@ Response: full project object.
 
 ## Users
 - `POST /users` (admin only)
+- `PATCH /users/{userId}` (admin only)
 
 Request:
 ```json
@@ -72,6 +73,13 @@ Request:
 `role` supports: `member`, `manager`.
 
 Response: full user object.
+
+`PATCH /users/{userId}` request:
+```json
+{
+  "role": "manager"
+}
+```
 
 ## Tasks
 - `POST /tasks`
