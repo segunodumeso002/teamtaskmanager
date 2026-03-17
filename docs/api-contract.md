@@ -1,23 +1,78 @@
-# API Contract (Step 1)
+# Team Task Manager API Contract
 
-Base URL comes from `VITE_API_BASE_URL`.
+This document defines the HTTP contract for the Team Task Manager backend.
 
-## Auth
-- `POST /auth/login`
+Base URL is provided by frontend environment variable:
+`VITE_API_BASE_URL`
+
+Example base URL:
+`https://{api-id}.execute-api.us-east-1.amazonaws.com`
+
+## Conventions
+
+- Content type: `application/json`
+- Auth header: `Authorization: Bearer <token>`
+- Dev auth token format: `dev-token-{userId}`
+- Timestamps use ISO-8601 strings
+- IDs are string values (`u_*`, `p_*`, `t_*`, `c_*`)
+
+## Auth Matrix
+
+| Endpoint | Method | Auth Required | Allowed Roles |
+|---|---|---|---|
+| `/health` | GET | No | Public |
+| `/auth/login` | POST | No | Public |
+| `/bootstrap` | GET | No | Public |
+| `/users` | POST | Yes | `admin` |
+| `/users/{userId}` | PATCH | Yes | `admin` |
+| `/projects` | POST | Yes | `admin`, `manager` |
+| `/tasks` | POST | Yes | `admin`, `manager`, `member` |
+| `/tasks/{taskId}` | PATCH | Yes | `admin`, `manager`, `member` |
+| `/tasks/{taskId}` | DELETE | Yes | `admin`, `manager`, `member` |
+| `/tasks/{taskId}/comments` | POST | Yes | `admin`, `manager`, `member` |
+| `/comments/{commentId}` | DELETE | Yes | `admin`, `manager`, `member` |
+
+## Endpoints
+
+### 1) Health Check
+
+`GET /health`
+
+Response `200`:
+```json
+{
+  "status": "ok",
+  "timestamp": "2026-03-17T08:25:57.705Z",
+  "mode": {
+    "data": "dynamo",
+    "auth": "dev"
+  }
+}
+```
+
+### 2) Login
+
+`POST /auth/login`
 
 Request:
 ```json
 {
-  "email": "andrew@taskflow.dev",
-  "password": "secret"
+  "userId": "u1"
 }
 ```
 
-Response:
+Alternative request shape:
 ```json
 {
-  "accessToken": "jwt-token",
-  "refreshToken": "refresh-token",
+  "email": "andrew@taskflow.dev"
+}
+```
+
+Response `200`:
+```json
+{
+  "accessToken": "dev-token-u1",
+  "refreshToken": "dev-refresh-u1",
   "user": {
     "id": "u1",
     "name": "Andrew Tierney",
@@ -27,10 +82,11 @@ Response:
 }
 ```
 
-## Bootstrap
-- `GET /bootstrap`
+### 3) Bootstrap
 
-Response:
+`GET /bootstrap`
+
+Response `200`:
 ```json
 {
   "currentUserId": "u1",
@@ -42,8 +98,60 @@ Response:
 }
 ```
 
-## Projects
-- `POST /projects`
+### 4) Create User (Admin)
+
+`POST /users`
+
+Request:
+```json
+{
+  "name": "Jane Doe",
+  "email": "jane@example.com",
+  "role": "member"
+}
+```
+
+`role` allowed values:
+- `member`
+- `manager`
+
+Response `201`:
+```json
+{
+  "id": "u_ab12cd34",
+  "name": "Jane Doe",
+  "email": "jane@example.com",
+  "role": "member"
+}
+```
+
+### 5) Update User Role (Admin)
+
+`PATCH /users/{userId}`
+
+Request:
+```json
+{
+  "role": "manager"
+}
+```
+
+Response `200`:
+```json
+{
+  "id": "u_ab12cd34",
+  "name": "Jane Doe",
+  "email": "jane@example.com",
+  "role": "manager"
+}
+```
+
+Notes:
+- Admin users cannot be demoted/modified through this endpoint.
+
+### 6) Create Project
+
+`POST /projects`
 
 Request:
 ```json
@@ -55,38 +163,13 @@ Request:
 }
 ```
 
-Response: full project object.
+Response `201`: full project object.
 
-## Users
-- `POST /users` (admin only)
-- `PATCH /users/{userId}` (admin only)
+### 7) Create Task
+
+`POST /tasks`
 
 Request:
-```json
-{
-  "name": "Jane Doe",
-  "email": "jane@example.com",
-  "role": "member"
-}
-```
-
-`role` supports: `member`, `manager`.
-
-Response: full user object.
-
-`PATCH /users/{userId}` request:
-```json
-{
-  "role": "manager"
-}
-```
-
-## Tasks
-- `POST /tasks`
-- `PATCH /tasks/{taskId}`
-- `DELETE /tasks/{taskId}`
-
-`POST /tasks` request:
 ```json
 {
   "projectId": "p1",
@@ -100,13 +183,33 @@ Response: full user object.
 }
 ```
 
-Response: full task object.
+Response `201`: full task object.
 
-## Comments
-- `POST /tasks/{taskId}/comments`
-- `DELETE /comments/{commentId}`
+### 8) Update Task
 
-`POST` request:
+`PATCH /tasks/{taskId}`
+
+Request (partial updates allowed):
+```json
+{
+  "status": "in_progress",
+  "priority": "medium"
+}
+```
+
+Response `200`: updated task object.
+
+### 9) Delete Task
+
+`DELETE /tasks/{taskId}`
+
+Response `204`.
+
+### 10) Add Comment
+
+`POST /tasks/{taskId}/comments`
+
+Request:
 ```json
 {
   "taskId": "t1",
@@ -115,4 +218,43 @@ Response: full task object.
 }
 ```
 
-Response: full comment object.
+Response `201`: full comment object.
+
+### 11) Delete Comment
+
+`DELETE /comments/{commentId}`
+
+Response `204`.
+
+## Error Model
+
+Error response shape:
+```json
+{
+  "message": "Human-readable message",
+  "details": null
+}
+```
+
+## Common Error Codes
+
+| Code | Meaning | Typical Cause |
+|---|---|---|
+| `400` | Bad Request | Missing/invalid payload fields |
+| `401` | Unauthorized | Missing/invalid/expired token |
+| `403` | Forbidden | Authenticated user lacks required role |
+| `404` | Not Found | Route or entity does not exist |
+| `409` | Conflict | Duplicate resource (for example email already exists) |
+| `500` | Server Error | Unexpected backend failure |
+
+## Environment Modes
+
+- `AUTH_MODE=dev`
+  - Uses local dev tokens (`dev-token-{userId}`)
+- `AUTH_MODE=cognito`
+  - Uses Cognito JWT verification
+
+- `DATA_MODE=memory`
+  - In-memory repository for local development
+- `DATA_MODE=dynamo`
+  - DynamoDB repository for deployed environments
